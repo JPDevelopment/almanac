@@ -42,5 +42,13 @@ defmodule Almanac.CLI do
 
   def process({station_id}) do
     Almanac.WeatherData.fetch(station_id)
+    |> decode_response()
+  end
+
+  def decode_response({:ok, body}), do: body
+
+  def decode_response({:error, error}) do
+    IO.puts "Error fetching data from https://w1.weather.gov/ : #{error["message"]}"
+    System.halt(2)
   end
 end
