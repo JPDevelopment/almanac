@@ -31,7 +31,8 @@ defmodule Almanac.CLI do
   def process({station_id}) do
     case Almanac.WeatherData.fetch(station_id) do
       {:ok, body} ->
-        body
+        IO.puts("\nLatest Data For #{body[:location]}")
+        format_list(body) |> print_conditions()
 
       {:error, error} ->
         error
@@ -42,6 +43,20 @@ defmodule Almanac.CLI do
     IO.puts("usage: almanac <station_id>")
 
     System.halt(0)
+  end
+
+  def format_list(list) do
+    ["Last Updated: #{list[:observation_time]}",
+    "Temperature: #{list[:temp_f]}", "Dewpoint: #{list[:dewpoint_string]}",
+    "Relative Humidity: #{list[:relative_humidity]}", "Wind: #{list[:wind_string]}",
+    "Wind Chill: #{list[:windchill_string]}", "MSL Pressure: #{list[:pressure_string]}",
+    "Altimeter: #{list[:pressure_in]}"]
+  end
+
+  def print_conditions([]), do: IO.puts("")
+  def print_conditions([ head | tail ]) do
+    IO.puts(head)
+    print_conditions(tail)
   end
 
 end
