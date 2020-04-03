@@ -1,6 +1,7 @@
 defmodule Almanac.WeatherData do
-  @current_obs_url Application.get_env(:almanac, :current_obs_url)
   import SweetXml
+
+  @current_obs_url Application.get_env(:almanac, :current_obs_url)
 
   def fetch(station_id) do
     weather_url(station_id)
@@ -15,14 +16,15 @@ defmodule Almanac.WeatherData do
   def handle_response({_, %{status_code: _, body: body}}) do
     try do
       doc = parse(body)
-      format_xml(doc)
+      {:ok, format_xml(doc)}
     catch
-      :exit, _ -> {:error, "Invalid XML"}
+      :exit, _ -> {:error, "Error fetching data from https://w1.weather.gov/"}
     end
   end
 
   def format_xml(doc) do
-    doc |> xpath(
+    doc
+    |> xpath(
       ~x"/current_observation"l,
       location: ~x"./location/text()",
       observation_time: ~x"./observation_time/text()",

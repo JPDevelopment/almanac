@@ -19,12 +19,8 @@ defmodule Almanac.CLI do
 
   Returns the station ID, or `:help` if help was given
   """
-
   def parse_args(argv) do
-    OptionParser.parse_head(argv,
-      aliases: [h: :help],
-      strict: [help: :boolean]
-    )
+    OptionParser.parse_head(argv, aliases: [h: :help], strict: [help: :boolean])
     |> elem(1)
     |> args_to_internal_representation()
   end
@@ -32,23 +28,20 @@ defmodule Almanac.CLI do
   def args_to_internal_representation([station_id]), do: {String.upcase(station_id)}
   def args_to_internal_representation(_), do: :help
 
+  def process({station_id}) do
+    case Almanac.WeatherData.fetch(station_id) do
+      {:ok, body} ->
+        body
+
+      {:error, error} ->
+        error
+    end
+  end
+
   def process(:help) do
-    IO.puts("""
-    usage: almanac <station_id>
-    """)
+    IO.puts("usage: almanac <station_id>")
 
     System.halt(0)
   end
 
-  def process({station_id}) do
-    Almanac.WeatherData.fetch(station_id)
-    |> decode_response()
-  end
-
-  def decode_response({:ok, body}), do: body
-
-  def decode_response({:error, error}) do
-    IO.puts "Error fetching data from https://w1.weather.gov/ : #{error["message"]}"
-    System.halt(2)
-  end
 end
