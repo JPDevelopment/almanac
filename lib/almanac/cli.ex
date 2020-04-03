@@ -5,7 +5,7 @@ defmodule Almanac.CLI do
   station ID provided as input by the user
   """
 
-  def run(argv) do
+  def main(argv) do
     argv
     |> parse_args()
     |> process()
