@@ -1,9 +1,13 @@
 defmodule Almanac.WeatherData do
+  require Logger
+
   import SweetXml
 
   @current_obs_url Application.get_env(:almanac, :current_obs_url)
 
   def fetch(station_id) do
+    Logger.info("Fetching current observation data for station with ID #{station_id}")
+
     weather_url(station_id)
     |> HTTPoison.get()
     |> handle_response()
@@ -13,28 +17,35 @@ defmodule Almanac.WeatherData do
     "#{@current_obs_url}/#{station_id}.xml"
   end
 
-  def handle_response({_, %{status_code: _, body: body}}) do
+  def handle_response({_, %{status_code: status_code, body: body}}) do
+    Logger.info("Got response: status code=#{status_code}")
+    Logger.debug(fn -> inspect(body) end)
     try do
-      doc = parse(body)
-      {:ok, format_xml(doc)}
+      result = body
+      |> parse()
+      |> xml_to_map()
+      |> List.first()
+      |> Map.to_list()
+
+      {:ok, result}
     catch
       :exit, _ -> {:error, "Error fetching data from https://w1.weather.gov/"}
     end
   end
 
-  def format_xml(doc) do
+  def xml_to_map(doc) do
     doc
     |> xpath(
       ~x"/current_observation"l,
-      location: ~x"./location/text()",
-      observation_time: ~x"./observation_time/text()",
-      temp_f: ~x"./temp_f/text()",
-      dewpoint_string: ~x"./dewpoint_string/text()",
-      relative_humidity: ~x"./relative_humidity/text()",
-      wind_string: ~x"./wind_string/text()",
-      windchill_string: ~x"./windchill_string/text()",
-      pressure_string: ~x"./pressure_string/text()",
-      pressure_in: ~x"./pressure_in/text()"
+      location: ~x"./location/text()"s,
+      observation_time: ~x"./observation_time/text()"s,
+      temp_f: ~x"./temp_f/text()"s,
+      dewpoint_string: ~x"./dewpoint_string/text()"s,
+      relative_humidity: ~x"./relative_humidity/text()"s,
+      wind_string: ~x"./wind_string/text()"s,
+      windchill_string: ~x"./windchill_string/text()"s,
+      pressure_string: ~x"./pressure_string/text()"s,
+      pressure_in: ~x"./pressure_in/text()"s |> transform_by(&(&1 <> " in Hg"))
     )
   end
 
